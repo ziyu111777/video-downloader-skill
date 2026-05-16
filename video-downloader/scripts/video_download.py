@@ -22,18 +22,47 @@ def expand_path(raw: str) -> Path:
 
 
 def read_clipboard() -> str:
-    if not shutil.which("pbpaste"):
-        raise RuntimeError("--clipboard is only supported when pbpaste is available")
-    completed = subprocess.run(
-        ["pbpaste"],
-        text=True,
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        check=False,
+    if sys.platform == "darwin":
+        candidates = [["pbpaste"]]
+    elif sys.platform == "win32":
+        ps_script = "[Console]::OutputEncoding=[Text.UTF8Encoding]::UTF8; Get-Clipboard -Raw"
+        ps_script_legacy = "[Console]::OutputEncoding=[Text.UTF8Encoding]::UTF8; Get-Clipboard"
+        candidates = [
+            ["pwsh", "-NoProfile", "-Command", ps_script],
+            ["powershell", "-NoProfile", "-Command", ps_script],
+            ["pwsh", "-NoProfile", "-Command", ps_script_legacy],
+            ["powershell", "-NoProfile", "-Command", ps_script_legacy],
+        ]
+    else:
+        candidates = [
+            ["wl-paste", "--no-newline"],
+            ["xclip", "-selection", "clipboard", "-out"],
+            ["xsel", "--clipboard", "--output"],
+        ]
+
+    errors: list[str] = []
+    for command in candidates:
+        if not shutil.which(command[0]):
+            continue
+        completed = subprocess.run(
+            command,
+            text=True,
+            encoding="utf-8",
+            errors="replace",
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            check=False,
+        )
+        if completed.returncode == 0:
+            return completed.stdout
+        errors.append(completed.stderr.strip() or f"{command[0]} failed")
+
+    details = f" Last error: {errors[-1]}" if errors else ""
+    raise RuntimeError(
+        "--clipboard requires a system clipboard command: pbpaste on macOS, "
+        "PowerShell Get-Clipboard on Windows, or wl-paste/xclip/xsel on Linux."
+        f"{details}"
     )
-    if completed.returncode != 0:
-        raise RuntimeError(completed.stderr.strip() or "failed to read clipboard")
-    return completed.stdout
 
 
 def extract_urls(text: str) -> list[str]:
@@ -67,8 +96,8 @@ def find_ytdlp() -> list[str]:
         )
     except Exception:
         raise RuntimeError(
-            "yt-dlp is not installed. Install it with `brew install yt-dlp` "
-            "or `python3 -m pip install -U yt-dlp`."
+            "yt-dlp is not installed. Install it with `brew install yt-dlp`, "
+            "`winget install yt-dlp.yt-dlp`, or `python3 -m pip install -U yt-dlp`."
         )
     return [sys.executable, "-m", "yt_dlp"]
 
@@ -191,7 +220,7 @@ def parse_args(argv: list[str]) -> argparse.Namespace:
     )
     parser.add_argument("share_text", nargs="*", help="Pasted share text or video URL")
     parser.add_argument("--url", help="Share text or URL, useful when the text starts with '-'")
-    parser.add_argument("--clipboard", action="store_true", help="Read share text from macOS clipboard")
+    parser.add_argument("--clipboard", action="store_true", help="Read share text from the system clipboard")
     parser.add_argument("--out-dir", default="~/Downloads/video-downloads", help="Download folder")
     parser.add_argument("--info-only", action="store_true", help="Print parsed metadata without downloading")
     parser.add_argument("--direct-url", action="store_true", help="Print direct media URL instead of downloading")

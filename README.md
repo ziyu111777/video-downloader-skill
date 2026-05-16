@@ -15,12 +15,22 @@ video-downloader/
 
 - `python3`
 - `yt-dlp`
-- macOS `pbpaste` only when using `--clipboard`
+- Optional clipboard command when using `--clipboard`:
+  - macOS: `pbpaste`
+  - Windows: PowerShell or PowerShell 7 `Get-Clipboard`
+  - Linux: `wl-paste`, `xclip`, or `xsel`
 
-Install `yt-dlp` on macOS:
+Install `yt-dlp`:
 
 ```bash
+# macOS
 brew install yt-dlp
+
+# Windows
+winget install yt-dlp.yt-dlp
+
+# Any platform with Python
+python3 -m pip install -U yt-dlp
 ```
 
 ## Direct Script Use
@@ -49,7 +59,7 @@ ln -s "$(pwd)/video-downloader" ~/.codex/skills/video-downloader
 
 ## Hermes Install
 
-Hermes on this machine did not discover symlinked skill directories reliably, so copy the folder:
+Hermes v0.9.0 on macOS did not discover symlinked skill directories reliably, so copy the folder:
 
 ```bash
 mkdir -p ~/.hermes/skills/media
@@ -73,5 +83,6 @@ cp -R video-downloader ~/.openclaw/skills/video-downloader
 ## Notes
 
 - The skill intentionally uses `yt-dlp` instead of copying private parser APIs from mini-programs.
+- The core script works on macOS, Windows, and Linux when Python and `yt-dlp` are available.
 - Some platforms require browser cookies. Use `--cookies-from-browser chrome` only when needed.
 - DRM-protected or heavily restricted video sources may not be downloadable.

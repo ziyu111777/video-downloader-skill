@@ -31,7 +31,8 @@ python3 scripts/video_download.py --direct-url "https://example.com/video/123"
 
 ## Failure Handling
 
-- If `yt-dlp` is missing, install or update it with Homebrew or pip, then retry.
+- If `yt-dlp` is missing, install or update it with Homebrew, winget, or pip, then retry.
+- If `--clipboard` fails, pass the share text directly. Clipboard mode needs `pbpaste` on macOS, PowerShell `Get-Clipboard` on Windows, or `wl-paste`/`xclip`/`xsel` on Linux.
 - If parsing fails, ask the user for the original full share text or URL, not a screenshot.
 - If extraction fails with login/session errors, retry with `--cookies-from-browser chrome`.
 - If a site uses DRM or blocks extraction, report that limitation plainly and do not invent a working parser.
