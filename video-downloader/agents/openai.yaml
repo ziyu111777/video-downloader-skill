@@ -1,0 +1,4 @@
+interface:
+  display_name: "Video Downloader"
+  short_description: "Parse share links and download videos locally"
+  default_prompt: "Use $video-downloader to download this pasted video share link."
